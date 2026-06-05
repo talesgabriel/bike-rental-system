@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface Usuario {
   id: string;
@@ -26,6 +27,7 @@ interface Aluguel {
 interface Estacao {
   id: string;
   nome: string;
+  endereco: string;
   capacidade: number;
 }
 
@@ -88,9 +90,38 @@ export default function Dashboard() {
     );
   }
 
+  async function devolverBike() {
+    if (!usuario) return;
+
+    const response =
+      await fetch(
+        "/api/devolver",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            usuarioId:
+              usuario.id,
+          }),
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (data.success) {
+      window.location.reload();
+    } else {
+      alert(data.message);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-gray-100">
-      <header className="bg-green-700 p-6 text-white shadow">
+      <header className="bg-green-700 p-6 text-white text-center shadow">
         <h1 className="text-2xl font-bold">
           🚲 Bike Mossoró
         </h1>
@@ -177,7 +208,10 @@ export default function Dashboard() {
                 )}
               </p>
 
-              <button className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700">
+              <button 
+                onClick={devolverBike}
+                className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+              >
                 Devolver Bicicleta
               </button>
             </>
@@ -187,10 +221,6 @@ export default function Dashboard() {
                 Nenhuma bicicleta
                 em uso.
               </p>
-
-              <button className="mt-4 rounded-lg bg-green-600 px-4 py-2 text-white hover:bg-green-700">
-                Alugar Bicicleta
-              </button>
             </>
           )}
         </div>
@@ -212,15 +242,22 @@ export default function Dashboard() {
                   </h3>
 
                   <p className="mt-2 text-gray-600">
+                    {estacao.endereco}
+                  </p>
+
+                  <p className="mt-2 text-gray-600">
                     Capacidade:{" "}
                     {
                       estacao.capacidade
                     }
                   </p>
 
-                  <button className="mt-4 w-full rounded-lg bg-green-700 py-2 text-white hover:bg-green-800">
+                  <Link
+                    href={`/estacoes/${estacao.id}`}
+                    className="mt-4 block w-full rounded-lg bg-green-700 py-2 text-center text-white hover:bg-green-800"
+                  >
                     Ver Bicicletas
-                  </button>
+                  </Link>
                 </div>
               )
             )}
