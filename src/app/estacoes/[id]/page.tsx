@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function EstacaoPage({
   params,
@@ -46,19 +47,17 @@ export default function EstacaoPage({
   async function alugarBike(
     bicicletaId: number
   ) {
-    const usuarioStorage =
-      localStorage.getItem(
-        "usuario"
-      );
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser();
 
-    if (!usuarioStorage) {
+    if (!user) {
+      alert(
+        "Faça login para alugar uma bicicleta."
+      );
       return;
     }
-
-    const usuario =
-      JSON.parse(
-        usuarioStorage
-      );
 
     const response =
       await fetch(
@@ -70,8 +69,7 @@ export default function EstacaoPage({
               "application/json",
           },
           body: JSON.stringify({
-            usuarioId:
-              usuario.id,
+            authID: user.id,
             bicicletaId,
           }),
         }

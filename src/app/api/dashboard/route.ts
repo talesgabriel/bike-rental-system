@@ -1,36 +1,66 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
-    const { usuarioId } = await request.json();
+    const { authId } =
+      await request.json();
 
-    const { data: plano } = await supabase
-      .from("planos")
+    const {
+      data: usuario,
+      error: usuarioError,
+    } = await supabase
+      .from("usuarios")
       .select("*")
-      .eq("usuario_id", usuarioId)
-      .eq("status", "ativo")
-      .maybeSingle();
+      .eq("auth_id", authId)
+      .single();
 
-    const { data: aluguel } = await supabase
-      .from("alugueis")
-      .select(`
-        *,
-        bicicletas (
-          codigo,
-          modelo
+    if (usuarioError || !usuario) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Usuário não encontrado",
+      });
+    }
+
+    const { data: plano } =
+      await supabase
+        .from("planos")
+        .select("*")
+        .eq(
+          "usuario_id",
+          usuario.id
         )
-      `)
-      .eq("usuario_id", usuarioId)
-      .eq("status", "ativo")
-      .maybeSingle();
+        .eq("status", "ativo")
+        .maybeSingle();
 
-    const { data: estacoes } = await supabase
-      .from("estacoes")
-      .select("*");
+    const { data: aluguel } =
+      await supabase
+        .from("alugueis")
+        .select(`
+          *,
+          bicicletas (
+            codigo,
+            modelo
+          )
+        `)
+        .eq(
+          "usuario_id",
+          usuario.id
+        )
+        .eq("status", "ativo")
+        .maybeSingle();
+
+    const { data: estacoes } =
+      await supabase
+        .from("estacoes")
+        .select("*");
 
     return NextResponse.json({
       success: true,
+      usuario,
       plano,
       aluguel,
       estacoes,
@@ -41,7 +71,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Erro ao carregar dashboard",
+        message:
+          "Erro ao carregar dashboard",
       },
       { status: 500 }
     );

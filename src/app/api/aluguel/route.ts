@@ -4,16 +4,32 @@ import { supabase } from "@/lib/supabase";
 export async function POST(request: Request) {
   try {
     const {
-      usuarioId,
+      authID,
       bicicletaId,
     } = await request.json();
+
+    const { data: usuario, error: erroUsuario } =
+      await supabase
+        .from("usuarios")
+        .select("id")
+        .eq("auth_id", authID)
+        .single();
+
+    if (erroUsuario || !usuario) {
+      return NextResponse.json({
+        success: false,
+        message: "Usuário não encontrado.",
+      });
+    }
+
+    const usuarioRealId = usuario.id;
 
     const {
       data: aluguelAtivo,
     } = await supabase
       .from("alugueis")
       .select("*")
-      .eq("usuario_id", usuarioId)
+      .eq("usuario_id", usuarioRealId)
       .eq("status", "ativo")
       .maybeSingle();
 
@@ -29,10 +45,9 @@ export async function POST(request: Request) {
       await supabase
         .from("alugueis")
         .insert({
-          usuario_id: usuarioId,
+          usuario_id: usuarioRealId,
           bicicleta_id: bicicletaId,
-          data_inicio:
-            new Date(),
+          data_inicio: new Date(),
           status: "ativo",
         });
 

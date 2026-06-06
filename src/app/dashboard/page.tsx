@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface Usuario {
   id: string;
@@ -39,21 +40,22 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function carregarDashboard() {
-      const usuarioStorage =
-        localStorage.getItem("usuario");
+  async function carregarDashboard() {
 
-      if (!usuarioStorage) {
-        return;
-      }
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser();
 
-      const usuarioLogado =
-        JSON.parse(usuarioStorage);
+    if (!user) {
+      window.location.href =
+        "/login";
+      return;
+    }
 
-      setUsuario(usuarioLogado);
-
-      const response = await fetch(
-        "/api/dashboard/",
+    const response =
+      await fetch(
+        "/api/dashboard",
         {
           method: "POST",
           headers: {
@@ -61,26 +63,26 @@ export default function Dashboard() {
               "application/json",
           },
           body: JSON.stringify({
-            usuarioId:
-              usuarioLogado.id,
+            authId: user.id,
           }),
         }
       );
 
-      const data =
-        await response.json();
+    const data =
+      await response.json();
 
-      if (data.success) {
-        setPlano(data.plano);
-        setAluguel(data.aluguel);
-        setEstacoes(data.estacoes);
-      }
-
-      setLoading(false);
+    if (data.success) {
+      setUsuario(data.usuario);
+      setPlano(data.plano);
+      setAluguel(data.aluguel);
+      setEstacoes(data.estacoes);
     }
 
-    carregarDashboard();
-  }, []);
+    setLoading(false);
+  }
+
+  carregarDashboard();
+}, []);
 
   if (loading) {
     return (
@@ -264,9 +266,11 @@ export default function Dashboard() {
           </div>
         </div>
         <button
-          onClick={() => {
-            localStorage.removeItem("usuario");
-            window.location.href = "/login";
+          onClick={async () => {
+            await supabase.auth.signOut();
+
+            window.location.href =
+              "/login";
           }}
           className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
         >

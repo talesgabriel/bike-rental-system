@@ -2,50 +2,36 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(
     e: React.FormEvent
   ) {
     e.preventDefault();
 
-    const response = await fetch(
-      "/api/login",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          senha,
-        }),
-      }
-    );
+    setLoading(true);
 
-    const data =
-      await response.json();
+    const { error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password: senha,
+      });
 
-    if (data.success) {
-      localStorage.setItem(
-        "usuario",
-        JSON.stringify(
-          data.usuario
-        )
-      );
+    setLoading(false);
 
-      router.push(
-        "/dashboard"
-      );
-    } else {
-      alert(data.message);
+    if (error) {
+      alert("Email ou senha inválidos");
+      return;
     }
+
+    router.push("/dashboard");
   }
 
   return (
@@ -63,9 +49,7 @@ export default function LoginPage() {
           placeholder="Email"
           value={email}
           onChange={(e) =>
-            setEmail(
-              e.target.value
-            )
+            setEmail(e.target.value)
           }
           className="mb-4 w-full rounded border p-3"
         />
@@ -75,18 +59,19 @@ export default function LoginPage() {
           placeholder="Senha"
           value={senha}
           onChange={(e) =>
-            setSenha(
-              e.target.value
-            )
+            setSenha(e.target.value)
           }
           className="mb-6 w-full rounded border p-3"
         />
 
         <button
           type="submit"
+          disabled={loading}
           className="w-full rounded bg-green-700 py-3 text-white"
         >
-          Entrar
+          {loading
+            ? "Entrando..."
+            : "Entrar"}
         </button>
       </form>
     </main>
