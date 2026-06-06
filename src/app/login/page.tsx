@@ -73,6 +73,16 @@ export default function LoginPage() {
             ? "Entrando..."
             : "Entrar"}
         </button>
+        <p className="mt-4 text-center">
+          Não possui conta?
+
+          <a
+            href="/cadastro"
+            className="ml-1 text-green-700"
+          >
+            Cadastre-se
+          </a>
+        </p>
       </form>
     </main>
   );
