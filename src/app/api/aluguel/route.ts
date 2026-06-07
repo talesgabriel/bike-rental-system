@@ -4,16 +4,18 @@ import { supabase } from "@/lib/supabase";
 export async function POST(request: Request) {
   try {
     const {
-      authID,
-      bicicletaId,
+      authId,
+      codigo,
     } = await request.json();
 
-    const { data: usuario, error: erroUsuario } =
-      await supabase
-        .from("usuarios")
-        .select("id")
-        .eq("auth_id", authID)
-        .single();
+    const {
+      data: usuario,
+      error: erroUsuario,
+    } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("auth_id", authId)
+      .single();
 
     if (erroUsuario || !usuario) {
       return NextResponse.json({
@@ -22,14 +24,31 @@ export async function POST(request: Request) {
       });
     }
 
-    const usuarioRealId = usuario.id;
+    const usuarioId = usuario.id;
+
+    const {
+      data: planoAtivo,
+    } = await supabase
+      .from("planos")
+      .select("*")
+      .eq("usuario_id", usuarioId)
+      .eq("status", "ativo")
+      .maybeSingle();
+
+    if (!planoAtivo) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Você precisa possuir um plano ativo.",
+      });
+    }
 
     const {
       data: aluguelAtivo,
     } = await supabase
       .from("alugueis")
       .select("*")
-      .eq("usuario_id", usuarioRealId)
+      .eq("usuario_id", usuarioId)
       .eq("status", "ativo")
       .maybeSingle();
 
@@ -41,35 +60,72 @@ export async function POST(request: Request) {
       });
     }
 
-    const { error: erroAluguel } =
-      await supabase
-        .from("alugueis")
-        .insert({
-          usuario_id: usuarioRealId,
-          bicicleta_id: bicicletaId,
-          data_inicio: new Date(),
-          status: "ativo",
-        });
+    const {
+      data: bicicleta,
+      error: erroBike,
+    } = await supabase
+      .from("bicicletas")
+      .select("*")
+      .eq("codigo", codigo)
+      .single();
+
+    if (erroBike || !bicicleta) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Bicicleta não encontrada.",
+      });
+    }
+
+    if (
+      bicicleta.status !==
+      "disponivel"
+    ) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Esta bicicleta não está disponível.",
+      });
+    }
+
+    const {
+      error: erroAluguel,
+    } = await supabase
+      .from("alugueis")
+      .insert({
+        usuario_id: usuarioId,
+        bicicleta_id: bicicleta.id,
+        data_inicio: new Date(),
+        status: "ativo",
+      });
 
     if (erroAluguel) {
       throw erroAluguel;
     }
 
-    const { error: erroBike } =
-      await supabase
-        .from("bicicletas")
-        .update({
-          status: "em uso",
-        })
-        .eq("id", bicicletaId);
+    const {
+      error: erroAtualizacao,
+    } = await supabase
+      .from("bicicletas")
+      .update({
+        status: "em uso",
+      })
+      .eq("id", bicicleta.id);
 
-    if (erroBike) {
-      throw erroBike;
+    if (erroAtualizacao) {
+      throw erroAtualizacao;
     }
 
     return NextResponse.json({
       success: true,
+      bicicleta: {
+        codigo:
+          bicicleta.codigo,
+        modelo:
+          bicicleta.modelo,
+      },
     });
+
   } catch (error) {
     console.error(error);
 
@@ -77,7 +133,7 @@ export async function POST(request: Request) {
       {
         success: false,
         message:
-          "Erro ao realizar aluguel",
+          "Erro ao realizar aluguel.",
       },
       { status: 500 }
     );

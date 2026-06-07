@@ -73,6 +73,7 @@ export default function LoginPage() {
             ? "Entrando..."
             : "Entrar"}
         </button>
+        
         <p className="mt-4 text-center">
           Não possui conta?
 

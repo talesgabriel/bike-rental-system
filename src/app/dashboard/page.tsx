@@ -129,7 +129,7 @@ export default function Dashboard() {
         </h1>
 
         <p className="mt-2">
-          Olá, {usuario?.nome}
+          👋 Olá, {usuario?.nome}
         </p>
       </header>
 
@@ -219,10 +219,22 @@ export default function Dashboard() {
             </>
           ) : (
             <>
-              <p>
-                Nenhuma bicicleta
-                em uso.
+              <p className="mb-4">
+                Nenhuma bicicleta em uso.
               </p>
+
+              {plano ? (
+                <Link
+                  href="/scanner"
+                  className="inline-block rounded-lg bg-green-700 px-4 py-2 text-white hover:bg-green-800"
+                >
+                  🚲 Desbloquear Bicicleta
+                </Link>
+              ) : (
+                <div className="rounded-lg bg-yellow-50 p-4 text-yellow-800">
+                  Você precisa adquirir um plano para retirar bicicletas.
+                </div>
+              )}
             </>
           )}
         </div>

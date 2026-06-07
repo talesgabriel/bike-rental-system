@@ -20,7 +20,6 @@ export async function GET(
         .from("bicicletas")
         .select("*")
         .eq("estacao_id", id)
-        .eq("status", "disponivel");
 
     return NextResponse.json({
       success: true,
