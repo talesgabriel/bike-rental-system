@@ -9,7 +9,9 @@ export default function EstacaoPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const router = useRouter();
+
+  const router =
+    useRouter();
 
   const [estacao, setEstacao] =
     useState<any>(null);
@@ -18,36 +20,51 @@ export default function EstacaoPage({
     useState<any[]>([]);
 
   const [qrAberto, setQrAberto] =
-    useState<string | null>(null);
+    useState<string | null>(
+      null
+    );
 
   useEffect(() => {
-    async function carregar() {
-      const { id } = await params;
 
-      const response = await fetch(
-        `/api/estacoes/${id}`
-      );
+    async function carregar() {
+
+      const { id } =
+        await params;
+
+      const response =
+        await fetch(
+          `/api/estacoes/${id}`
+        );
 
       const data =
         await response.json();
 
       if (data.success) {
-        setEstacao(data.estacao);
+
+        setEstacao(
+          data.estacao
+        );
+
         setBicicletas(
           data.bicicletas
         );
+
       }
+
     }
 
     carregar();
+
   }, [params]);
 
   if (!estacao) {
+
     return (
       <div className="p-6">
         Carregando...
       </div>
     );
+
   }
 
   const bicicletasDisponiveis =
@@ -71,7 +88,17 @@ export default function EstacaoPage({
         "manutencao"
     );
 
+  const delta = 0.005;
+
+  const bbox = `
+  ${estacao.longitude - delta},
+  ${estacao.latitude - delta},
+  ${estacao.longitude + delta},
+  ${estacao.latitude + delta}
+  `;
+
   return (
+
     <main className="min-h-screen bg-gray-100">
 
       <header className="relative bg-green-700 p-6 text-white shadow">
@@ -86,6 +113,7 @@ export default function EstacaoPage({
         </button>
 
         <div className="text-center">
+
           <h1 className="text-2xl font-bold">
             🚲 Estação {estacao.nome}
           </h1>
@@ -93,15 +121,35 @@ export default function EstacaoPage({
           <p className="mt-2 text-green-100">
             {estacao.endereco}
           </p>
+
         </div>
 
       </header>
 
       <section className="mx-auto max-w-6xl p-6">
 
+        {estacao.latitude &&
+          estacao.longitude && (
+
+          <div className="mb-8 overflow-hidden rounded-xl bg-white p-4 shadow">
+
+            <h2 className="mb-4 text-lg font-semibold">
+              Localização
+            </h2>
+
+            <iframe
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&marker=${estacao.latitude},${estacao.longitude}`}
+              className="h-[350px] w-full rounded-lg border-0"
+            />
+
+          </div>
+
+        )}
+
         <div className="mb-8 grid gap-4 md:grid-cols-4">
 
           <div className="rounded-xl bg-white p-6 shadow">
+
             <h3 className="text-sm text-gray-500">
               Total
             </h3>
@@ -109,9 +157,11 @@ export default function EstacaoPage({
             <p className="mt-2 text-3xl font-bold">
               {bicicletas.length}
             </p>
+
           </div>
 
           <div className="rounded-xl bg-white p-6 shadow">
+
             <h3 className="text-sm text-gray-500">
               Disponíveis
             </h3>
@@ -121,9 +171,11 @@ export default function EstacaoPage({
                 bicicletasDisponiveis.length
               }
             </p>
+
           </div>
 
           <div className="rounded-xl bg-white p-6 shadow">
+
             <h3 className="text-sm text-gray-500">
               Em uso
             </h3>
@@ -133,9 +185,11 @@ export default function EstacaoPage({
                 bicicletasEmUso.length
               }
             </p>
+
           </div>
 
           <div className="rounded-xl bg-white p-6 shadow">
+
             <h3 className="text-sm text-gray-500">
               Manutenção
             </h3>
@@ -145,6 +199,7 @@ export default function EstacaoPage({
                 bicicletasManutencao.length
               }
             </p>
+
           </div>
 
         </div>
@@ -155,20 +210,27 @@ export default function EstacaoPage({
 
         {bicicletasDisponiveis.length ===
         0 ? (
+
           <div className="rounded-xl bg-white p-8 text-center shadow">
+
             <p className="text-gray-500">
               Nenhuma bicicleta disponível no momento.
             </p>
+
           </div>
+
         ) : (
+
           <div className="grid gap-4 md:grid-cols-3">
 
             {bicicletasDisponiveis.map(
               (bike) => (
+
                 <div
                   key={bike.id}
                   className="rounded-xl bg-white p-5 shadow transition hover:shadow-lg"
                 >
+
                   <h3 className="text-lg font-bold">
                     {bike.codigo}
                   </h3>
@@ -178,9 +240,13 @@ export default function EstacaoPage({
                   </p>
 
                   <div className="mt-4">
+
                     <span className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-700">
+
                       🟢 Disponível
+
                     </span>
+
                   </div>
 
                   <button
@@ -194,14 +260,17 @@ export default function EstacaoPage({
                     }
                     className="mt-4 w-full rounded-lg bg-green-700 py-2 text-white hover:bg-green-800"
                   >
+
                     {qrAberto ===
                     bike.codigo
                       ? "Ocultar QR Code"
                       : "Exibir QR Code"}
+
                   </button>
 
                   {qrAberto ===
                     bike.codigo && (
+
                     <div className="mt-4 flex flex-col items-center rounded-lg border bg-white p-4">
 
                       <QRCode
@@ -216,17 +285,22 @@ export default function EstacaoPage({
                       </p>
 
                     </div>
+
                   )}
 
                 </div>
+
               )
             )}
 
           </div>
+
         )}
 
       </section>
 
     </main>
+
   );
+
 }

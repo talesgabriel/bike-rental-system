@@ -40,6 +40,7 @@ export default function Dashboard() {
   const [aluguel, setAluguel] = useState<Aluguel | null>(null);
   const [estacoes, setEstacoes] = useState<Estacao[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tempoRestante, setTempoRestante] = useState<number | null>(null);
 
   useEffect(() => {
   async function carregarDashboard() {
@@ -86,12 +87,42 @@ export default function Dashboard() {
   carregarDashboard();
 }, []);
 
+  useEffect(() => {
+    if (!aluguel || !plano) return;
+
+    const inicio = new Date(aluguel.data_inicio + "Z").getTime();
+    const limiteMs = plano.tempo_limite * 60 * 1000;
+
+    const atualizar = () => {
+      const agora = Date.now();
+
+      const restante = limiteMs - (agora - inicio);
+
+      setTempoRestante(restante > 0 ? restante : 0);
+    };
+
+    atualizar();
+
+    const interval = setInterval(atualizar, 1000);
+
+    return () => clearInterval(interval);
+  }, [aluguel, plano]);
+
   if (loading) {
     return (
       <div className="p-6">
         Carregando...
       </div>
     );
+  }
+
+  function formatarTempo(ms: number) {
+    const totalSegundos = Math.floor(ms / 1000);
+
+    const minutos = Math.floor(totalSegundos / 60);
+    const segundos = totalSegundos % 60;
+
+    return `${minutos}m ${segundos}s`;
   }
 
   return (
@@ -210,9 +241,18 @@ export default function Dashboard() {
                 )}
               </p>
 
+              {tempoRestante !== null && (
+                <p>
+                  <strong>Tempo restante:</strong>{" "}
+                  {tempoRestante > 0
+                    ? formatarTempo(tempoRestante)
+                    : "Tempo excedido"}
+                </p>
+              )}
+
               <Link 
                 href="/devolver"
-                className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                className="mt-4 inline-block rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
               >
                 Devolver Bicicleta
               </Link>
