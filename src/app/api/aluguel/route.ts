@@ -43,6 +43,41 @@ export async function POST(request: Request) {
       });
     }
 
+    if (
+      new Date(planoAtivo.data_fim) <
+      new Date()
+    ) {
+      await supabase
+        .from("planos")
+        .update({
+          status: "encerrado",
+        })
+        .eq("id", planoAtivo.id);
+
+      return NextResponse.json({
+        success: false,
+        message:
+          "Seu plano expirou.",
+      });
+    }
+
+    if (
+      planoAtivo.viagens_restantes <= 0
+    ) {
+      await supabase
+        .from("planos")
+        .update({
+          status: "encerrado",
+        })
+        .eq("id", planoAtivo.id);
+
+      return NextResponse.json({
+        success: false,
+        message:
+          "Seu plano não possui mais viagens disponíveis.",
+      });
+    }
+
     const {
       data: aluguelAtivo,
     } = await supabase

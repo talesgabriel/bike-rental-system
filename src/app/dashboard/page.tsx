@@ -11,8 +11,10 @@ interface Usuario {
 
 interface Plano {
   tipo: string;
-  tempo_limite: number;
+  data_inicio: string;
   data_fim: string;
+  viagens_restantes: number;
+  tempo_limite: number;
 }
 
 interface Bicicleta {
@@ -149,9 +151,13 @@ export default function Dashboard() {
 
               <p>
                 <strong>
-                  Tempo limite:
+                  Início:
                 </strong>{" "}
-                {plano.tempo_limite} min
+                {new Date(
+                  plano.data_inicio
+                ).toLocaleDateString(
+                  "pt-BR"
+                )}
               </p>
 
               <p>
@@ -164,11 +170,34 @@ export default function Dashboard() {
                   "pt-BR"
                 )}
               </p>
+
+              <p>
+                <strong>
+                  Viagens restantes:
+                </strong>{" "}
+                {plano.viagens_restantes}
+              </p>
+
+              <p>
+                <strong>
+                  Tempo máximo por viagem:
+                </strong>{" "}
+                {plano.tempo_limite} min
+              </p>
             </>
           ) : (
-            <p>
-              Nenhum plano ativo.
-            </p>
+            <>
+              <p>
+                Nenhum plano ativo.
+              </p>
+
+              <Link
+                href="/planos"
+                className="mt-4 inline-block rounded-lg bg-green-700 px-4 py-2 text-white hover:bg-green-800"
+              >
+                Contratar Plano
+              </Link>
+            </>
           )}
         </div>
 

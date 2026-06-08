@@ -10,15 +10,24 @@ export async function POST(
 
     const {
       data: aluguel,
-      error,
+      error: erroAluguel,
     } = await supabase
       .from("alugueis")
       .select("*")
-      .eq("usuario_id", usuarioId)
-      .eq("status", "ativo")
+      .eq(
+        "usuario_id",
+        usuarioId
+      )
+      .eq(
+        "status",
+        "ativo"
+      )
       .single();
 
-    if (error || !aluguel) {
+    if (
+      erroAluguel ||
+      !aluguel
+    ) {
       return NextResponse.json({
         success: false,
         message:
@@ -26,26 +35,152 @@ export async function POST(
       });
     }
 
-    await supabase
+    const {
+      data: plano,
+      error: erroPlano,
+    } = await supabase
+      .from("planos")
+      .select("*")
+      .eq(
+        "usuario_id",
+        usuarioId
+      )
+      .eq(
+        "status",
+        "ativo"
+      )
+      .single();
+
+    if (
+      erroPlano ||
+      !plano
+    ) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Plano não encontrado.",
+      });
+    }
+
+    const dataFim =
+      new Date();
+
+    const dataInicio =
+      new Date(
+        aluguel.data_inicio
+      );
+
+    const duracaoMinutos =
+      Math.floor(
+        (dataFim.getTime() -
+          dataInicio.getTime()) /
+          60000
+      );
+
+    const excedeuLimite =
+      duracaoMinutos >
+      plano.tempo_limite;
+
+    const {
+      error:
+        erroFinalizarAluguel,
+    } = await supabase
       .from("alugueis")
       .update({
-        status: "finalizado",
-        data_fim: new Date(),
+        status:
+          "finalizado",
+        data_fim:
+          dataFim,
+        duracao_minutos:
+          duracaoMinutos,
+        excedeu_limite:
+          excedeuLimite,
       })
-      .eq("id", aluguel.id);
+      .eq(
+        "id",
+        aluguel.id
+      );
 
-    await supabase
+    if (
+      erroFinalizarAluguel
+    ) {
+      throw erroFinalizarAluguel;
+    }
+
+    const {
+      error:
+        erroAtualizarBike,
+    } = await supabase
       .from("bicicletas")
       .update({
-        status: "disponivel",
+        status:
+          "disponivel",
       })
       .eq(
         "id",
         aluguel.bicicleta_id
       );
 
+    if (
+      erroAtualizarBike
+    ) {
+      throw erroAtualizarBike;
+    }
+
+    const viagensRestantes =
+      (plano.viagens_restantes ??
+        0) - 1;
+
+    if (
+      viagensRestantes <= 0
+    ) {
+      const {
+        error:
+          erroEncerrarPlano,
+      } = await supabase
+        .from("planos")
+        .update({
+          viagens_restantes: 0,
+          status:
+            "encerrado",
+        })
+        .eq(
+          "id",
+          plano.id
+        );
+
+      if (
+        erroEncerrarPlano
+      ) {
+        throw erroEncerrarPlano;
+      }
+    } else {
+      const {
+        error:
+          erroAtualizarPlano,
+      } = await supabase
+        .from("planos")
+        .update({
+          viagens_restantes:
+            viagensRestantes,
+        })
+        .eq(
+          "id",
+          plano.id
+        );
+
+      if (
+        erroAtualizarPlano
+      ) {
+        throw erroAtualizarPlano;
+      }
+    }
+
     return NextResponse.json({
       success: true,
+      viagensRestantes,
+      duracaoMinutos,
+      excedeuLimite,
     });
   } catch (error) {
     console.error(error);
@@ -54,9 +189,11 @@ export async function POST(
       {
         success: false,
         message:
-          "Erro ao devolver bicicleta",
+          "Erro ao devolver bicicleta.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

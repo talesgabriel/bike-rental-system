@@ -17,7 +17,10 @@ export async function POST(
       .eq("auth_id", authId)
       .single();
 
-    if (usuarioError || !usuario) {
+    if (
+      usuarioError ||
+      !usuario
+    ) {
       return NextResponse.json({
         success: false,
         message:
@@ -25,7 +28,7 @@ export async function POST(
       });
     }
 
-    const { data: plano } =
+    let { data: plano } =
       await supabase
         .from("planos")
         .select("*")
@@ -33,8 +36,40 @@ export async function POST(
           "usuario_id",
           usuario.id
         )
-        .eq("status", "ativo")
+        .eq(
+          "status",
+          "ativo"
+        )
         .maybeSingle();
+
+    if (plano) {
+      const expirado =
+        new Date(
+          plano.data_fim
+        ) < new Date();
+
+      const semViagens =
+        plano.viagens_restantes <=
+        0;
+
+      if (
+        expirado ||
+        semViagens
+      ) {
+        await supabase
+          .from("planos")
+          .update({
+            status:
+              "encerrado",
+          })
+          .eq(
+            "id",
+            plano.id
+          );
+
+        plano = null;
+      }
+    }
 
     const { data: aluguel } =
       await supabase
@@ -50,7 +85,10 @@ export async function POST(
           "usuario_id",
           usuario.id
         )
-        .eq("status", "ativo")
+        .eq(
+          "status",
+          "ativo"
+        )
         .maybeSingle();
 
     const { data: estacoes } =
