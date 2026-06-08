@@ -5,6 +5,7 @@ export async function POST(
   request: Request
 ) {
   try {
+
     const { authId } =
       await request.json();
 
@@ -14,7 +15,10 @@ export async function POST(
     } = await supabase
       .from("usuarios")
       .select("*")
-      .eq("auth_id", authId)
+      .eq(
+        "auth_id",
+        authId
+      )
       .single();
 
     if (
@@ -43,19 +47,17 @@ export async function POST(
         .maybeSingle();
 
     if (plano) {
+
+      const agora =
+        new Date();
+
       const expirado =
         new Date(
           plano.data_fim
-        ) < new Date();
+        ) < agora;
 
-      const semViagens =
-        plano.viagens_restantes <=
-        0;
+      if (expirado) {
 
-      if (
-        expirado ||
-        semViagens
-      ) {
         await supabase
           .from("planos")
           .update({
@@ -68,10 +70,71 @@ export async function POST(
           );
 
         plano = null;
+
+      } else {
+
+        const hoje =
+          agora
+            .toISOString()
+            .split("T")[0];
+
+        const ultimaRenovacao =
+          plano.ultima_renovacao
+            ? new Date(
+                plano.ultima_renovacao
+              )
+                .toISOString()
+                .split("T")[0]
+            : null;
+
+        const precisaRenovar =
+          plano.tipo !==
+            "avulso" &&
+          hoje !==
+            ultimaRenovacao;
+
+        if (
+          precisaRenovar
+        ) {
+
+          const {
+            error:
+              erroRenovacao,
+          } = await supabase
+            .from("planos")
+            .update({
+              viagens_restantes:
+                20,
+
+              ultima_renovacao:
+                agora,
+            })
+            .eq(
+              "id",
+              plano.id
+            );
+
+          if (
+            erroRenovacao
+          ) {
+            throw erroRenovacao;
+          }
+
+          plano.viagens_restantes =
+            20;
+
+          plano.ultima_renovacao =
+            agora.toISOString();
+
+        }
+
       }
+
     }
 
-    const { data: aluguel } =
+    const {
+      data: aluguel,
+    } =
       await supabase
         .from("alugueis")
         .select(`
@@ -91,7 +154,9 @@ export async function POST(
         )
         .maybeSingle();
 
-    const { data: estacoes } =
+    const {
+      data: estacoes,
+    } =
       await supabase
         .from("estacoes")
         .select("*");
@@ -103,7 +168,9 @@ export async function POST(
       aluguel,
       estacoes,
     });
+
   } catch (error) {
+
     console.error(error);
 
     return NextResponse.json(
@@ -112,7 +179,10 @@ export async function POST(
         message:
           "Erro ao carregar dashboard",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
+
   }
 }

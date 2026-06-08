@@ -161,7 +161,7 @@ export default function PlanosPage() {
             </h2>
 
             <p className="mt-2 text-gray-600">
-              10 viagens por dia de 45 minutos
+              20 viagens por dia de 45 minutos
             </p>
 
             <p className="mt-4 text-3xl font-bold text-green-700">

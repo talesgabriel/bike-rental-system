@@ -77,7 +77,7 @@ export async function POST(
         break;
 
       case "anual":
-        viagensRestantes = 10;
+        viagensRestantes = 20;
         dias = 365;
         tempoLimite = 45;
         break;

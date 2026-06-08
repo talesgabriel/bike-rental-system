@@ -94,35 +94,6 @@ export default function Dashboard() {
     );
   }
 
-  async function devolverBike() {
-    if (!usuario) return;
-
-    const response =
-      await fetch(
-        "/api/devolver",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            usuarioId:
-              usuario.id,
-          }),
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (data.success) {
-      window.location.reload();
-    } else {
-      alert(data.message);
-    }
-  }
-
   return (
     <main className="min-h-screen bg-gray-100">
       <header className="bg-green-700 p-6 text-white text-center shadow">
@@ -239,12 +210,12 @@ export default function Dashboard() {
                 )}
               </p>
 
-              <button 
-                onClick={devolverBike}
+              <Link 
+                href="/devolver"
                 className="mt-4 rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
               >
                 Devolver Bicicleta
-              </button>
+              </Link>
             </>
           ) : (
             <>
@@ -252,18 +223,23 @@ export default function Dashboard() {
                 Nenhuma bicicleta em uso.
               </p>
 
-              {plano ? (
-                <Link
-                  href="/scanner"
-                  className="inline-block rounded-lg bg-green-700 px-4 py-2 text-white hover:bg-green-800"
-                >
-                  🚲 Desbloquear Bicicleta
-                </Link>
-              ) : (
-                <div className="rounded-lg bg-yellow-50 p-4 text-yellow-800">
-                  Você precisa adquirir um plano para retirar bicicletas.
-                </div>
-              )}
+              {plano &&
+                plano.viagens_restantes > 0 ? (
+                  <Link
+                    href="/scanner"
+                    className="inline-block rounded-lg bg-green-700 px-4 py-2 text-white"
+                  >
+                    🚲 Desbloquear Bicicleta
+                  </Link>
+                ) : plano ? (
+                  <div className="rounded-lg bg-yellow-50 p-4 text-yellow-800">
+                    Seu plano está sem viagens disponíveis.
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-yellow-50 p-4 text-yellow-800">
+                    Você precisa adquirir um plano para retirar bicicletas.
+                  </div>
+                )}
             </>
           )}
         </div>

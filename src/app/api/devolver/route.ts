@@ -5,8 +5,36 @@ export async function POST(
   request: Request
 ) {
   try {
-    const { usuarioId } =
-      await request.json();
+    const {
+      authId,
+      estacaoId,
+    } = await request.json();
+
+    const {
+      data: usuario,
+      error: erroUsuario,
+    } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq(
+        "auth_id",
+        authId
+      )
+      .single();
+
+    if (
+      erroUsuario ||
+      !usuario
+    ) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Usuário não encontrado.",
+      });
+    }
+
+    const usuarioId =
+      usuario.id;
 
     const {
       data: aluguel,
@@ -59,6 +87,61 @@ export async function POST(
         success: false,
         message:
           "Plano não encontrado.",
+      });
+    }
+
+    const {
+      data: estacao,
+      error: erroEstacao,
+    } = await supabase
+      .from("estacoes")
+      .select("*")
+      .eq(
+        "id",
+        estacaoId
+      )
+      .single();
+
+    if (
+      erroEstacao ||
+      !estacao
+    ) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Estação não encontrada.",
+      });
+    }
+
+    const {
+      count: bicicletasNaEstacao,
+      error: erroContagem,
+    } = await supabase
+      .from("bicicletas")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq(
+        "estacao_id",
+        estacaoId
+      );
+
+    if (
+      erroContagem
+    ) {
+      throw erroContagem;
+    }
+
+    if (
+      (bicicletasNaEstacao ??
+        0) >=
+      estacao.capacidade
+    ) {
+      return NextResponse.json({
+        success: false,
+        message:
+          "Esta estação está lotada.",
       });
     }
 
@@ -115,6 +198,8 @@ export async function POST(
       .update({
         status:
           "disponivel",
+        estacao_id:
+          estacaoId,
       })
       .eq(
         "id",
@@ -128,52 +213,47 @@ export async function POST(
     }
 
     const viagensRestantes =
-      (plano.viagens_restantes ??
-        0) - 1;
+      Math.max(
+        (plano.viagens_restantes ??
+          0) - 1,
+        0
+      );
+
+    const atualizarPlano = {
+      viagens_restantes:
+        viagensRestantes,
+    };
 
     if (
-      viagensRestantes <= 0
+      plano.tipo === "avulso" &&
+      viagensRestantes === 0
     ) {
-      const {
-        error:
-          erroEncerrarPlano,
-      } = await supabase
-        .from("planos")
-        .update({
-          viagens_restantes: 0,
+      Object.assign(
+        atualizarPlano,
+        {
           status:
             "encerrado",
-        })
-        .eq(
-          "id",
-          plano.id
-        );
+        }
+      );
+    }
 
-      if (
-        erroEncerrarPlano
-      ) {
-        throw erroEncerrarPlano;
-      }
-    } else {
-      const {
-        error:
-          erroAtualizarPlano,
-      } = await supabase
-        .from("planos")
-        .update({
-          viagens_restantes:
-            viagensRestantes,
-        })
-        .eq(
-          "id",
-          plano.id
-        );
+    const {
+      error:
+        erroAtualizarPlano,
+    } = await supabase
+      .from("planos")
+      .update(
+        atualizarPlano
+      )
+      .eq(
+        "id",
+        plano.id
+      );
 
-      if (
-        erroAtualizarPlano
-      ) {
-        throw erroAtualizarPlano;
-      }
+    if (
+      erroAtualizarPlano
+    ) {
+      throw erroAtualizarPlano;
     }
 
     return NextResponse.json({
