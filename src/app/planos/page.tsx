@@ -1,14 +1,29 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function PlanosPage() {
   const router = useRouter();
 
-  async function contratarPlano(
-    tipo: string
-  ) {
+  const [modalAberto, setModalAberto] =
+    useState(false);
+
+  const [planoSelecionado, setPlanoSelecionado] =
+    useState("");
+
+  const [metodoPagamento, setMetodoPagamento] =
+    useState("");
+
+  async function contratarPlano() {
+    if (!metodoPagamento) {
+      alert(
+        "Selecione uma forma de pagamento."
+      );
+      return;
+    }
+
     const {
       data: { user },
     } =
@@ -30,7 +45,7 @@ export default function PlanosPage() {
           },
           body: JSON.stringify({
             authId: user.id,
-            tipo,
+            tipo: planoSelecionado,
           }),
         }
       );
@@ -40,7 +55,7 @@ export default function PlanosPage() {
 
     if (data.success) {
       alert(
-        "Plano contratado com sucesso!"
+        `Pagamento via ${metodoPagamento} aprovado!\nPlano contratado com sucesso.`
       );
 
       router.push(
@@ -51,8 +66,17 @@ export default function PlanosPage() {
     }
   }
 
+  function abrirModal(
+    tipo: string
+  ) {
+    setPlanoSelecionado(tipo);
+    setMetodoPagamento("");
+    setModalAberto(true);
+  }
+
   return (
     <main className="min-h-screen bg-gray-100">
+
       <header className="relative bg-green-700 p-6 text-white shadow">
 
         <button
@@ -72,7 +96,8 @@ export default function PlanosPage() {
           <p className="mt-2 text-green-100">
             Selecione um plano para utilizar o sistema
           </p>
-          </div>
+        </div>
+
       </header>
 
       <section className="mx-auto max-w-6xl p-6">
@@ -94,7 +119,7 @@ export default function PlanosPage() {
 
             <button
               onClick={() =>
-                contratarPlano(
+                abrirModal(
                   "avulso"
                 )
               }
@@ -110,7 +135,7 @@ export default function PlanosPage() {
             </h2>
 
             <p className="mt-2 text-gray-600">
-              20 viagens por dia de 45 minutos
+              20 viagens por um dia de 45 minutos
             </p>
 
             <p className="mt-4 text-3xl font-bold text-green-700">
@@ -119,7 +144,7 @@ export default function PlanosPage() {
 
             <button
               onClick={() =>
-                contratarPlano(
+                abrirModal(
                   "diario"
                 )
               }
@@ -130,7 +155,6 @@ export default function PlanosPage() {
           </div>
 
           <div className="rounded-xl bg-white p-6 shadow">
-
             <h2 className="text-xl font-bold">
               Mensal
             </h2>
@@ -145,7 +169,7 @@ export default function PlanosPage() {
 
             <button
               onClick={() =>
-                contratarPlano(
+                abrirModal(
                   "mensal"
                 )
               }
@@ -170,7 +194,7 @@ export default function PlanosPage() {
 
             <button
               onClick={() =>
-                contratarPlano(
+                abrirModal(
                   "anual"
                 )
               }
@@ -183,6 +207,114 @@ export default function PlanosPage() {
         </div>
 
       </section>
+
+      {modalAberto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+
+            <h2 className="mb-4 text-xl font-bold">
+              Finalizar Contratação
+            </h2>
+
+            <p className="mb-4 text-gray-600">
+              Plano selecionado:{" "}
+              <strong>
+                {planoSelecionado}
+              </strong>
+            </p>
+
+            <h3 className="mb-3 font-semibold">
+              Forma de pagamento
+            </h3>
+
+            <div className="space-y-3">
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3">
+                <input
+                  type="radio"
+                  name="pagamento"
+                  value="PIX"
+                  checked={
+                    metodoPagamento ===
+                    "PIX"
+                  }
+                  onChange={(e) =>
+                    setMetodoPagamento(
+                      e.target.value
+                    )
+                  }
+                />
+                PIX
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3">
+                <input
+                  type="radio"
+                  name="pagamento"
+                  value="Cartão de Crédito"
+                  checked={
+                    metodoPagamento ===
+                    "Cartão de Crédito"
+                  }
+                  onChange={(e) =>
+                    setMetodoPagamento(
+                      e.target.value
+                    )
+                  }
+                />
+                Cartão de Crédito
+              </label>
+
+              <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3">
+                <input
+                  type="radio"
+                  name="pagamento"
+                  value="Cartão de Débito"
+                  checked={
+                    metodoPagamento ===
+                    "Cartão de Débito"
+                  }
+                  onChange={(e) =>
+                    setMetodoPagamento(
+                      e.target.value
+                    )
+                  }
+                />
+                Cartão de Débito
+              </label>
+
+            </div>
+
+            <div className="mt-6 flex gap-3">
+
+              <button
+                onClick={() =>
+                  setModalAberto(
+                    false
+                  )
+                }
+                className="flex-1 rounded-lg border py-3"
+              >
+                Cancelar
+              </button>
+
+              <button
+                onClick={
+                  contratarPlano
+                }
+                className="flex-1 rounded-lg bg-green-700 py-3 text-white hover:bg-green-800"
+              >
+                Confirmar
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </main>
   );
 }
