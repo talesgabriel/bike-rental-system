@@ -90,9 +90,16 @@ export default function Dashboard() {
   useEffect(() => {
     if (!aluguel || !plano) return;
 
-    const inicio = new Date(aluguel.data_inicio + "Z").getTime();
+    const inicio = new Date(aluguel.data_inicio).getTime();
     const limiteMs = plano.tempo_limite * 60 * 1000;
 
+console.log(aluguel.data_inicio);
+
+console.log(
+  new Date(
+    aluguel.data_inicio
+  )
+);
     const atualizar = () => {
       const agora = Date.now();
 
